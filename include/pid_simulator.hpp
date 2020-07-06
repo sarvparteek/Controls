@@ -79,7 +79,7 @@ namespace pid
             feedback        = updatePosition(feedback, control_effort, dt); // perfect tracking and estimation
             t              += dt;
             logMotion(reference, feedback, control_effort, t, file);
-            // TODO : Write control effort to csv file
+            // TODO : Simulate effect of a discrete jump in reference/feedback
         }
     }
 
