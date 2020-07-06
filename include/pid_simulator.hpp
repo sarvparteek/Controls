@@ -8,6 +8,7 @@
 #define CONTROLS_PID_SIMULATOR_HPP
 
 #include <algorithm>
+#include <fstream>
 #include "pid.hpp"
 
 namespace pid
@@ -49,8 +50,16 @@ namespace pid
         return q_dot_effort_clamped;
     }
 
+    void logMotion(double const &ref, double const &fdbk, double const &vel_cmd, double const &time, std::ofstream &file)
+    {
+        file << ref      << ","
+             << fdbk     << ","
+             << vel_cmd  << ","
+             << time     << std::endl;
+    }
+
     template <typename T>
-    void simulateController(PID<T> & controller)
+    void simulateController(PID<T> & controller, std::ofstream &file)
     {
         double dt             = 1e-3;
         double t_max          = 10;
@@ -62,12 +71,14 @@ namespace pid
         double x_ddot_max     =  2; // 2 m/s^2 max accel
         double x_ddot_min     = -2; // -2 m/s^2 min accel
         double control_effort =  0;
+
         while (t < t_max)
         {
             control_effort  = getClampedControlEffort(controller.getControlEffort(reference, feedback, dt),
                                                       control_effort, x_ddot_max, x_ddot_min, x_dot_max, x_dot_min, dt);
             feedback        = updatePosition(feedback, control_effort, dt); // perfect tracking and estimation
             t              += dt;
+            logMotion(reference, feedback, control_effort, t, file);
             // TODO : Write control effort to csv file
         }
     }
@@ -75,8 +86,12 @@ namespace pid
     void testControllers()
     {
         std::cout << std::endl << __PRETTY_FUNCTION__ << std::endl;
-        PID<unsigned int> p_controller(Gains<unsigned int>(1.5, 0, 0, 0, 0));
+        std::string output_folder = "C:/Users/sarvp/CLionProjects/Controls/data";
 
+        PID<unsigned int> p_controller(Gains<unsigned int>(1.5, 0, 0, 0, 0));
+        std::ofstream file_controller_1(output_folder + "/controller_1.csv");
+        simulateController(p_controller, file_controller_1);
+        file_controller_1.close();
     }
 
 }

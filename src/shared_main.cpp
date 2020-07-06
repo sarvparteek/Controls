@@ -6,5 +6,6 @@
 
 int main()
 {
+    pid::testControllers();
     return 0;
 }

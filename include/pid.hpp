@@ -137,15 +137,8 @@ namespace pid
         PID(Gains<T> const &g) : m_gains(g)
         {}
 
-        double getControlEffort(double const &reference, double const &feedback)
-        {
-            computeControlEffort();
-            return m_control_effort;
-        }
-
-    private:
-        void computeControlEffort(double const &reference, double const &feedback, double const &dt,
-                                  double const &q_dot_cmd = 0, double const &q_ddot_cmd = 0)
+        double getControlEffort(double const &reference, double const &feedback, double const &dt,
+                                double const &q_dot_cmd = 0, double const &q_ddot_cmd = 0)
         {
             auto m_prev_err  = m_err;
             m_err            = reference - feedback;
@@ -153,11 +146,15 @@ namespace pid
             m_err_deriv      = (m_err - m_prev_err) / dt;
             m_err_deriv_filt = m_err_deriv; // TODO - Add filtering
             m_control_effort =   m_gains.getPGain()       * m_err
-                               + m_gains.getIGain()       * m_err_sum
-                               + m_gains.getDGain()       * m_err_deriv_filt
-                               + m_gains.getVelFfGain()   * q_dot_cmd
-                               + m_gains.getAccelFfGain() * q_ddot_cmd;
+                                 + m_gains.getIGain()       * m_err_sum
+                                 + m_gains.getDGain()       * m_err_deriv_filt
+                                 + m_gains.getVelFfGain()   * q_dot_cmd
+                                 + m_gains.getAccelFfGain() * q_ddot_cmd;
+            return m_control_effort;
         }
+
+    private:
+
 
         Gains<T> m_gains;
         double   m_err;
