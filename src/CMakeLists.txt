@@ -1,0 +1,1 @@
+add_executable(shared_main shared_main.cpp)
