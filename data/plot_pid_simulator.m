@@ -1,4 +1,4 @@
-function [] = plot_motion(filename, fig_handle)
+function [] = plot_pid_simulator(filename, fig_handle)
 
 try
     M      = csvread(filename);
@@ -19,10 +19,14 @@ end
     legend('Ref','Act');
     xlabel('Time [s]');
     ylabel('Pos [m]');
+    grid on;
     
     ha(2) = subplot(2,1,2);
     plot(time, vel);
     xlabel('Time [s]');
     ylabel('Vel [m/s]');
+    grid on;
+    
+    linkaxes(ha,'x');
 
 end
