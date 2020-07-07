@@ -1,4 +1,4 @@
 .idea
 cmake-build-debug
 data/**
-!data/plot_motion.m
+!data/*.m

@@ -62,7 +62,7 @@ namespace pid
     void simulateController(PID<T> & controller, std::ofstream &file)
     {
         double dt             = 1e-3;
-        double t_max          = 10;
+        double t_max          = 20;
         double t              =  0;
         double reference      = 10; // 10 m target
         double feedback       =  0;

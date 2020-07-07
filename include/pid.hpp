@@ -146,23 +146,20 @@ namespace pid
             m_err_deriv      = (m_err - m_prev_err) / dt;
             m_err_deriv_filt = m_err_deriv; // TODO - Add filtering
             m_control_effort =   m_gains.getPGain()       * m_err
-                                 + m_gains.getIGain()       * m_err_sum
-                                 + m_gains.getDGain()       * m_err_deriv_filt
-                                 + m_gains.getVelFfGain()   * q_dot_cmd
-                                 + m_gains.getAccelFfGain() * q_ddot_cmd;
+                               + m_gains.getIGain()       * m_err_sum
+                               + m_gains.getDGain()       * m_err_deriv_filt
+                               + m_gains.getVelFfGain()   * q_dot_cmd
+                               + m_gains.getAccelFfGain() * q_ddot_cmd;
             return m_control_effort;
         }
 
     private:
-
-
         Gains<T> m_gains;
         double   m_err;
         double   m_err_sum;
         double   m_err_deriv;
         double   m_err_deriv_filt;
         double   m_control_effort;
-
     };
 
 } // pid
