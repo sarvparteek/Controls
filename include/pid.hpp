@@ -10,8 +10,10 @@
 #include <iostream>
 #include <utility> // for move
 #include <cassert>
+#include <algorithm>
 
 #include "is_numeric.hpp"
+#include "math/signum.hpp"
 
 namespace pid
 {
@@ -134,7 +136,14 @@ namespace pid
     class PID
     {
     public:
-        PID(Gains<T> const &g) : m_gains(g)
+        PID(Gains<T> const &g) : m_gains(g),
+                                 m_err(0.0),
+                                 m_err_sum(0.0),
+                                 m_err_deriv(0.0),
+                                 m_err_deriv_filt(0.0),
+                                 m_control_effort(0.0),
+                                 m_max_control_effort(2.0),
+                                 m_windup(1.0)
         {}
 
         double getControlEffort(double const &reference, double const &feedback, double const &dt,
@@ -150,7 +159,31 @@ namespace pid
                                + m_gains.getDGain()       * m_err_deriv_filt
                                + m_gains.getVelFfGain()   * q_dot_cmd
                                + m_gains.getAccelFfGain() * q_ddot_cmd;
+            //applyAntiWindup(m_control_effort);
             return m_control_effort;
+        }
+
+        void applyAntiWindup(double const &control_effort)
+        {
+            /* C  = Ki * err_sum + f(e, e_dot)
+             * where C = control effort
+             * So, f(e, e_dot) = C - Ki * err_sum
+             * */
+            auto l_f_e_edot           = control_effort - m_gains.getIGain() * m_err_sum;
+
+            /* if (|C| > |C_max|)
+             *      Ki * err_sum = sgn(C).C_max - f(e,e_dot)
+             *                     sgn(C).C_max - f(e,e_dot)
+             *           err_sum = --------------------------
+             *                                 Ki
+             * */
+            auto l_max_control_effort = std::max(m_windup, 1.0) * m_max_control_effort;
+            if (std::abs(control_effort) > l_max_control_effort)
+            {
+                m_err_sum = (math::sgn<double>(control_effort, 1e-5) * l_max_control_effort - l_f_e_edot) /
+                                                                                                    m_gains.getIGain();
+                m_control_effort = m_gains.getIGain() * m_err_sum;
+            }
         }
 
     private:
@@ -160,6 +193,8 @@ namespace pid
         double   m_err_deriv;
         double   m_err_deriv_filt;
         double   m_control_effort;
+        double   m_max_control_effort;
+        double   m_windup;
     };
 
 } // pid

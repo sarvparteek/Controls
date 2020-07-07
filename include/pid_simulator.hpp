@@ -9,6 +9,8 @@
 
 #include <algorithm>
 #include <fstream>
+#include <cmath>
+#include <vector>
 #include "pid.hpp"
 
 namespace pid
@@ -88,10 +90,26 @@ namespace pid
         std::cout << std::endl << __PRETTY_FUNCTION__ << std::endl;
         std::string output_folder = "C:/Users/sarvp/CLionProjects/Controls/data";
 
-        PID<unsigned int> p_controller(Gains<unsigned int>(1.5, 0, 0, 0, 0));
-        std::ofstream file_controller_1(output_folder + "/controller_1.csv");
-        simulateController(p_controller, file_controller_1);
-        file_controller_1.close();
+        for (int i = 1; i <= 3; ++i)
+        {
+            PID<double> p_controller(Gains<double>(1.50 * std::pow(10,i-1), 0, 0, 0, 0));
+            std::ofstream file_controller(output_folder + "/controller_" + std::to_string(i) + ".csv");
+            simulateController(p_controller, file_controller);
+            file_controller.close();
+        }
+
+
+        std::vector<double> i_gains{0.9999, 1.0, 100};
+        int idx_base = 4;
+        for (int i = 4; i <= 6; ++i)
+        {
+            PID<double> pi_controller(Gains<double>(1.5, i_gains.at(i-idx_base), 0, 0, 0));
+            std::ofstream file_controller(output_folder + "/controller_" + std::to_string(i) + ".csv");
+            simulateController(pi_controller, file_controller);
+            file_controller.close();
+            // TODO: Implement anti-windup control. Better option: clamp control effort in class PID, then call
+            // anti-windup
+        }
     }
 
 }
