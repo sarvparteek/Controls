@@ -61,7 +61,7 @@ namespace pid
     }
 
     template <typename T>
-    void simulateController(PID<T> & controller, std::ofstream &file)
+    void simulateController(PID<T> & controller, std::ofstream &file, double bias_vel = 0)
     {
         double dt             = 1e-3;
         double t_max          = 20;
@@ -76,7 +76,7 @@ namespace pid
 
         while (t < t_max)
         {
-            control_effort  = getClampedControlEffort(controller.getControlEffort(reference, feedback, dt),
+            control_effort  = getClampedControlEffort(controller.getControlEffort(reference, feedback, dt) + bias_vel,
                                                       control_effort, x_ddot_max, x_ddot_min, x_dot_max, x_dot_min, dt);
             feedback        = updatePosition(feedback, control_effort, dt); // perfect tracking and estimation
             t              += dt;
