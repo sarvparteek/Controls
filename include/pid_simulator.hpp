@@ -15,9 +15,20 @@
 
 namespace pid
 {
-    double updatePosition(double const &pos, double const &vel, double const &dt)
+    /*!
+     * @brief Updates position by integrating velocity
+     * @param[in] pos Previous position
+     * @param[in] vel Current velocity command
+     * @param[in] dt Loop period (over which velocity command can be assumed constant)
+     * @param[in] lag_factor Resistive factor which stops position from moving forward.
+     *                         1   => no resistance (nominal motion)
+     *                         0   => full resistance (no motion)
+     *                       (0,1) => some resistance
+     * @return Update position
+     */
+    double updatePosition(double const &pos, double const &vel, double const &dt, double const &lag_factor)
     {
-        return (pos + vel * dt); // kinematic model
+        return (pos + vel * dt * lag_factor); // kinematic model
     }
 
     double getClampedControlEffort(double const &q_dot_effort, double const &q_dot_effort_last,
@@ -61,7 +72,8 @@ namespace pid
     }
 
     template <typename T>
-    void simulateController(PID<T> & controller, std::ofstream &file, double bias_vel = 0)
+    void simulateController(PID<T> & controller, std::ofstream &file, double const &lag_factor = 1,
+                            double const & bias_vel = 0, double const &t_ref_jump_percent = -1)
     {
         double dt             = 1e-3;
         double t_max          = 20;
@@ -73,12 +85,19 @@ namespace pid
         double x_ddot_max     =  2; // 2 m/s^2 max accel
         double x_ddot_min     = -2; // -2 m/s^2 min accel
         double control_effort =  0;
+        double l_t_ref_jump = t_ref_jump_percent * t_max;
 
         while (t < t_max)
         {
+            /* When time approaches the jump point, have the reference jump up to a higher value */
+            if (l_t_ref_jump > 0 && std::abs(t - l_t_ref_jump) < 2 * dt)
+            {
+                reference      += 5;
+                l_t_ref_jump  = -1; // Do not jump again
+            }
             control_effort  = getClampedControlEffort(controller.getControlEffort(reference, feedback, dt) + bias_vel,
                                                       control_effort, x_ddot_max, x_ddot_min, x_dot_max, x_dot_min, dt);
-            feedback        = updatePosition(feedback, control_effort, dt); // perfect tracking and estimation
+            feedback        = updatePosition(feedback, control_effort, dt, lag_factor);
             t              += dt;
             logMotion(reference, feedback, control_effort, t, file);
             // TODO : Simulate effect of a discrete jump in reference/feedback
@@ -92,9 +111,12 @@ namespace pid
 
         for (int i = 1; i <= 3; ++i)
         {
-            PID<double> p_controller(Gains<double>(1.50 * std::pow(10,i-1), 0, 0, 0, 0));
+            PID<double> p_controller(Gains<double>(2 * std::pow(10,i-1), 0, 0, 0, 0));
             std::ofstream file_controller(output_folder + "/controller_" + std::to_string(i) + ".csv");
-            simulateController(p_controller, file_controller);
+            simulateController(p_controller, file_controller); // use
+                                                                      // t_ref_jump_percent = 0.028 for P gain of 2
+                                                                      // to get a jump at 5.6 (settling happens at
+                                                                      // 6 otherwise)
             file_controller.close();
         }
 
